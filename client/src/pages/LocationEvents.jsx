@@ -1,40 +1,81 @@
-import React, { useState, useEffect } from 'react'
-import Event from '../components/Event'
-import '../css/LocationEvents.css'
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { getLocationById } from "../services/LocationsAPI";
+import { getEventsByLocation } from "../services/EventsAPI";
+import "../css/LocationEvents.css";
 
-const LocationEvents = ({index}) => {
-    const [location, setLocation] = useState([])
-    const [events, setEvents] = useState([])
+const LocationEvents = () => {
+  const { id } = useParams();
+  const [location, setLocation] = useState(null);
+  const [events, setEvents] = useState([]);
 
-    return (
-        <div className='location-events'>
-            <header>
-                <div className='location-image'>
-                    <img src={location.image} />
-                </div>
+  useEffect(() => {
+    const fetchData = async () => {
+      const locationData = await getLocationById(id);
+      const eventsData = await getEventsByLocation(id);
 
-                <div className='location-info'>
-                    <h2>{location.name}</h2>
-                    <p>{location.address}, {location.city}, {location.state} {location.zip}</p>
-                </div>
-            </header>
+      setLocation(locationData);
+      setEvents(eventsData || []);
+    };
 
-            <main>
-                {
-                    events && events.length > 0 ? events.map((event, index) =>
-                        <Event
-                            key={event.id}
-                            id={event.id}
-                            title={event.title}
-                            date={event.date}
-                            time={event.time}
-                            image={event.image}
-                        />
-                    ) : <h2><i className="fa-regular fa-calendar-xmark fa-shake"></i> {'No events scheduled at this location yet!'}</h2>
-                }
-            </main>
-        </div>
-    )
-}
+    fetchData();
+  }, [id]);
 
-export default LocationEvents
+  return (
+    <div className="location-events-page">
+      {location && (
+        <>
+          <div
+            className="location-events-hero"
+            style={{ backgroundImage: `url(${location.image})` }}
+          >
+            <div className="location-events-overlay"></div>
+
+            <div className="location-events-nav">
+              <Link to="/">
+                <button className="nav-button">HOME</button>
+              </Link>
+              <Link to="/events">
+                <button className="nav-button">ALL EVENTS</button>
+              </Link>
+            </div>
+
+            <div className="location-events-hero-content">
+              <h1>{location.name}</h1>
+              <p>{location.description}</p>
+            </div>
+          </div>
+
+          <div className="events-section">
+            <h2 className="section-title">Upcoming Events</h2>
+
+            {events.length === 0 ? (
+              <p className="empty-text">No events found for this location.</p>
+            ) : (
+              <div className="events-grid">
+                {events.map((event) => (
+                  <div key={event.id} className="event-card">
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="event-card-image"
+                    />
+                    <div className="event-card-body">
+                      <h3>{event.title}</h3>
+                      <p className="event-date">
+                        {new Date(event.event_date).toLocaleString()}
+                      </p>
+                      <p className="event-description">{event.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default LocationEvents;
